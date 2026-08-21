@@ -67,8 +67,6 @@ def wait_for_server_ready(timeout=20):
 
 
 def benchmark(prompt, tokens, warmup_seconds, measure_seconds):
-    time.sleep(warmup_seconds)
-
     start = time.time()
     r = requests.post(
         "http://localhost:8080/completion",
@@ -160,19 +158,26 @@ def run_single_config(server_path, model_path, static_params, combo,
     params = static_params.copy()
     params.update(combo)
 
-    proc = start_server(server_path, model_path, params)
+    try:
+        proc = start_server(server_path, model_path, params)
 
-    if not wait_for_server_ready():
-        print("Server failed to start, skipping configuration.")
-        stop_server(proc)
-        return best
+        print("Waiting for server to launch...")
+        if not wait_for_server_ready(timeout=benchmark_cfg["warmup_seconds"]):
+            print("Server failed to start, skipping configuration.")
+            stop_server(proc)
+            return best
+        print("Server launched!")
 
-    result = benchmark(
-        benchmark_cfg["prompt"],
-        benchmark_cfg["tokens"],
-        benchmark_cfg["warmup_seconds"],
-        benchmark_cfg["measure_seconds"]
-    )
+        print("Running benchmark...")
+        result = benchmark(
+            benchmark_cfg["prompt"],
+            benchmark_cfg["tokens"],
+            benchmark_cfg["warmup_seconds"],
+            benchmark_cfg["measure_seconds"]
+        )
+    except KeyboardInterrupt:
+        stop_server(proc=proc)
+        print("Killed server before terminating.")
 
     stop_server(proc)
 
