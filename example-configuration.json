@@ -1,0 +1,29 @@
+{
+  "model_path": "path/to/model.gguf",
+  "server_path": "path/to/llama-server.exe",
+
+  "static_params": {
+    "threads": 6,
+    "gpu_layers": "auto",
+    "flash_attn": "on"
+  },
+
+  "optimize": {
+    "batch_size": [512, 1024, 2048, 4096],
+    "fit_ctx": [2048, 4096]
+  },
+
+  "benchmark": {
+    "prompt": "Hello, how are you today?",
+    "tokens": 128,
+    "warmup_seconds": 2,
+    "measure_seconds": 5
+  },
+
+  "search": {
+    "strategy": "grid",
+    "random_trials": 10,
+    "bayes_trials": 30,
+    "bayes_beta": 0.3
+  }
+}
