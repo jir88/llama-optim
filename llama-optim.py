@@ -58,7 +58,7 @@ def wait_for_server_ready(server_port, timeout=20):
     start = time.time()
     while time.time() - start < timeout:
         try:
-            r = requests.get("http://localhost:" + server_port + "/health")
+            r = requests.get("http://localhost:" + str(server_port) + "/health")
             if r.status_code == 200:
                 return True
         except requests.HTTPError as error:
@@ -70,8 +70,8 @@ def wait_for_server_ready(server_port, timeout=20):
 def benchmark(server_port, prompt, tokens, warmup_seconds, measure_seconds):
     start = time.time()
     r = requests.post(
-        "http://localhost:" + server_port + "/completion",
-        json={"prompt": prompt, "n_predict": tokens}
+        "http://localhost:" + str(server_port) + "/completion",
+        json={"prompt": prompt, "n_predict": tokens, "ignore_eos": True}
     )
     end = time.time()
 
