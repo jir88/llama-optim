@@ -34,8 +34,8 @@ def build_param_grid(optimize_dict, strategy, random_trials):
         raise ValueError(f"Unknown search strategy for grid/random: {strategy}")
 
 
-def start_server(server_path, model_path, params):
-    cmd = [server_path, "-m", model_path]
+def start_server(server_path, server_port, model_path, params):
+    cmd = [server_path, "-m", model_path, "--port", str(server_port)]
 
     for key, value in params.items():
         flag = f"--{key.replace('_', '-')}"
@@ -54,11 +54,11 @@ def start_server(server_path, model_path, params):
     )
 
 
-def wait_for_server_ready(timeout=20):
+def wait_for_server_ready(server_port, timeout=20):
     start = time.time()
     while time.time() - start < timeout:
         try:
-            r = requests.get("http://localhost:8080/health")
+            r = requests.get("http://localhost:" + server_port + "/health")
             if r.status_code == 200:
                 return True
         except requests.HTTPError as error:
@@ -67,15 +67,16 @@ def wait_for_server_ready(timeout=20):
     return False
 
 
-def benchmark(prompt, tokens, warmup_seconds, measure_seconds):
+def benchmark(server_port, prompt, tokens, warmup_seconds, measure_seconds):
     start = time.time()
     r = requests.post(
-        "http://localhost:8080/completion",
+        "http://localhost:" + server_port + "/completion",
         json={"prompt": prompt, "n_predict": tokens}
     )
     end = time.time()
 
     if r.status_code != 200:
+        print(str(r))
         return None
 
     data = r.json()
@@ -153,16 +154,16 @@ def bayes_sample(optimize_params, history, beta=0.3):
     return child
 
 
-def run_single_config(server_path, model_path, static_params, combo,
+def run_single_config(server_path, server_port, model_path, static_params, combo,
                       benchmark_cfg, csv_path, optimize_keys, best, history):
     params = static_params.copy()
     params.update(combo)
 
     try:
-        proc = start_server(server_path, model_path, params)
+        proc = start_server(server_path, server_port, model_path, params)
 
         print("Waiting for server to launch...")
-        if not wait_for_server_ready(timeout=benchmark_cfg["warmup_seconds"]):
+        if not wait_for_server_ready(server_port=server_port, timeout=benchmark_cfg["warmup_seconds"]):
             print("Server failed to start, skipping configuration.")
             stop_server(proc)
             return best
@@ -170,10 +171,11 @@ def run_single_config(server_path, model_path, static_params, combo,
 
         print("Running benchmark...")
         result = benchmark(
-            benchmark_cfg["prompt"],
-            benchmark_cfg["tokens"],
-            benchmark_cfg["warmup_seconds"],
-            benchmark_cfg["measure_seconds"]
+            server_port=server_port,
+            prompt=benchmark_cfg["prompt"],
+            tokens=benchmark_cfg["tokens"],
+            warmup_seconds=benchmark_cfg["warmup_seconds"],
+            measure_seconds=benchmark_cfg["measure_seconds"]
         )
     except KeyboardInterrupt:
         stop_server(proc=proc)
@@ -228,6 +230,7 @@ def main():
     config = load_config(config_path)
 
     model_path = config["model_path"]
+    server_port = config["server_port"]
     server_path = config["server_path"]
     static_params = config.get("static_params", {})
     optimize_params = config.get("optimize", {})
@@ -255,6 +258,7 @@ def main():
         ):
             best = run_single_config(
                 server_path,
+                server_port,
                 model_path,
                 static_params,
                 combo,
@@ -271,6 +275,7 @@ def main():
             combo = bayes_sample(optimize_params, history)
             best = run_single_config(
                 server_path,
+                server_port,
                 model_path,
                 static_params,
                 combo,

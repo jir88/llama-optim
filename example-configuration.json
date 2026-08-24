@@ -1,6 +1,7 @@
 {
   "model_path": "path/to/model.gguf",
   "server_path": "path/to/llama-server.exe",
+  "server_port": 8067,
 
   "static_params": {
     "threads": 6,
