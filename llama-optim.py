@@ -80,11 +80,16 @@ def benchmark(server_port, prompt, tokens, warmup_seconds, measure_seconds):
         return None
 
     data = r.json()
+    timing_data = data.get("timings")
+
+    print(str(data))
     tok_count = data.get("tokens_predicted", tokens)
     elapsed = end - start
 
     return {
-        "tokens_per_second": tok_count / elapsed,
+        "tokens_per_second": timing_data["predicted_per_second"],
+        "tokens_predicted": tok_count,
+        "prompt_per_second": timing_data.get("prompt_per_second"),
         "latency": elapsed
     }
 
@@ -100,7 +105,7 @@ def stop_server(proc):
 def init_csv(path, optimize_keys):
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        header = optimize_keys + ["tokens_per_second", "latency"]
+        header = optimize_keys + ["tokens_per_second", "tokens_predicted", "prompt_per_second", "latency"]
         writer.writerow(header)
 
 
@@ -109,6 +114,8 @@ def append_csv(path, params, result, optimize_keys):
         writer = csv.writer(f)
         row = [params[k] for k in optimize_keys] + [
             result["tokens_per_second"],
+            result["tokens_predicted"],
+            result["prompt_per_second"],
             result["latency"]
         ]
         writer.writerow(row)
@@ -241,7 +248,7 @@ def main():
     csv_path = args.output
     if not args.overwrite and csv_path.exists():
         # put timestamp on input file name
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # noqa: DTZ005
         csv_path = csv_path.parent.joinpath(csv_path.stem + "_" + timestamp + ".csv")
     optimize_keys = list(optimize_params.keys())
     init_csv(csv_path, optimize_keys)
