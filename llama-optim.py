@@ -1,5 +1,6 @@
 import argparse
 import csv
+import datetime
 import itertools
 import json
 import random
@@ -96,11 +97,10 @@ def stop_server(proc):
 
 
 def init_csv(path, optimize_keys):
-    if not Path(path).exists():
-        with open(path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            header = optimize_keys + ["tokens_per_second", "latency"]
-            writer.writerow(header)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        header = optimize_keys + ["tokens_per_second", "latency"]
+        writer.writerow(header)
 
 
 def append_csv(path, params, result, optimize_keys):
@@ -204,7 +204,16 @@ def parse_args() -> argparse.Namespace:
         "Semi-automatically optimize the parameters for a llama.cpp server."
     ))
     parser.add_argument("config", type=Path, help="Path to the configuration file to use.")
-    parser.add_argument("--output", type=Path, default="results.csv", required=False)
+    parser.add_argument(
+        "--output", type=Path, default="results.csv", required=False,
+        help="Output file name to use.")
+    parser.add_argument(
+        "--overwrite", action="store_true",
+        help=(
+            "If enabled, output CSV file will be overwritten if it exists. Otherwise "
+            "a timestamp will be added to the output file to avoid overwriting."
+        )
+    )
     return parser.parse_args()
 
 def main():
@@ -227,6 +236,10 @@ def main():
 
     # set up output CSV file with header
     csv_path = args.output
+    if not args.overwrite and csv_path.exists():
+        # put timestamp on input file name
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        csv_path = csv_path.parent.joinpath(csv_path.stem + "_" + timestamp + ".csv")
     optimize_keys = list(optimize_params.keys())
     init_csv(csv_path, optimize_keys)
 
