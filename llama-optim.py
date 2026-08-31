@@ -28,10 +28,12 @@ class InferenceObjective:
     """Server parameters that we will be optimizing."""
     benchmark_cfg:dict
     """Settings for the optimization itself."""
+    allowed_reps:int = 1
+    """How many times can a condition be run before it should be pruned on further calls?"""
 
     def __init__(
         self, server_path:str, server_port:int, model_path:str, static_params:dict, 
-        optimize_params:dict, benchmark_cfg:dict, search_cfg):
+        optimize_params:dict, benchmark_cfg:dict, search_cfg, allowed_reps:int = 1):
         # set up parameters and such
         self.server_path = server_path
         self.server_port = server_port
@@ -39,6 +41,7 @@ class InferenceObjective:
         self.static_params = static_params
         self.optimize_params = optimize_params
         self.benchmark_cfg = benchmark_cfg
+        self.allowed_reps = allowed_reps
 
 
     def __call__(self, trial:optuna.Trial):
@@ -48,13 +51,22 @@ class InferenceObjective:
 
         # select new set of parameters to test
         for k in self.optimize_params:
-            # if this is too cumbersome or fails on mixed types, could also
-            # consider selecting an index within the list of options
-            params[k] = trial.suggest_categorical(
-                name=k,
-                choices=self.optimize_params[k]
-            )
+        # could either reroll or else throw an optuna.TrialPruned
+        history = trial.study.get_trials(deepcopy=False)
+        # drop last trial, which is the current one
+        history = history[:-1]
+        rep_count = 0
+        for old_trial in history:
+            if old_trial.params == trial.params:
+                rep_count += 1
 
+        if rep_count == self.allowed_reps:
+            # we've already used up our replicate allowance
+            print(f"Warning, condition with more than {self.allowed_reps} replicates was pruned!")
+            # returning the prior replicate's result causes optimizer to get stuck around that region
+            # pruning pushes the optimizer away to try new things
+            raise optuna.TrialPruned()
+        
         try:
             proc = self.start_server(params)
 
@@ -209,7 +221,8 @@ def main():
         static_params=static_params,
         optimize_params=optimize_params,
         benchmark_cfg=benchmark_cfg,
-        search_cfg=search_cfg
+        search_cfg=search_cfg,
+        allowed_reps=search_cfg.get("allowed_reps", 1)
     )
 
     optim_study = optuna.create_study(

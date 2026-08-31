@@ -25,6 +25,8 @@
     "strategy": "grid",
     "random_trials": 10,
     "bayes_trials": 30,
-    "bayes_beta": 0.3
+    "bayes_beta": 0.3,  
+    "n_trials": 100,
+    "allowed_reps": 2
   }
 }
