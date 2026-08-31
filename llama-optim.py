@@ -83,6 +83,10 @@ class InferenceObjective:
             return None
 
         print(f"Result: {result}")
+        trial.set_user_attr("prompt_per_second", result["prompt_per_second"])
+        trial.set_user_attr("tokens_predicted", result["tokens_predicted"])
+        trial.set_user_attr("draft_n", result["draft_n"])
+        trial.set_user_attr("draft_n_accepted", result["draft_n_accepted"])
         # currently only optimizing TPS
         return result["tokens_per_second"]
     
@@ -147,6 +151,8 @@ class InferenceObjective:
             "tokens_per_second": timing_data["predicted_per_second"],
             "tokens_predicted": tok_count,
             "prompt_per_second": timing_data.get("prompt_per_second"),
+            "draft_n": timing_data.get("draft_n", -1),
+            "draft_n_accepted": timing_data.get("draft_n_accepted", -1),
             "latency": elapsed
         }
 
