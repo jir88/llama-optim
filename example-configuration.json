@@ -15,6 +15,7 @@
   },
 
   "benchmark": {
+    "prompt_type": "string",
     "prompt": "Hello, how are you today?",
     "tokens": 128,
     "warmup_seconds": 2,
