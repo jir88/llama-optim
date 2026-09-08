@@ -100,6 +100,12 @@ class InferenceObjective:
         except KeyboardInterrupt:
             self.stop_server(proc=proc)
             print("Killed server before terminating.")
+        except ConnectionError as e:
+            self.stop_server(proc=proc)
+            print("Server connection failed!")
+            print(str(e))
+            print("Killed server before pruning condition.")
+            raise optuna.TrialPruned()
 
         self.stop_server(proc)
 
