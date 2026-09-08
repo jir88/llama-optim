@@ -30,6 +30,8 @@ class InferenceObjective:
     """Settings for the optimization itself."""
     allowed_reps:int = 1
     """How many times can a condition be run before it should be pruned on further calls?"""
+    prompt:list[dict]
+    """The prompt messages to use when testing the LLM."""
 
     def __init__(
         self, server_path:str, server_port:int, model_path:str, static_params:dict, 
@@ -43,6 +45,17 @@ class InferenceObjective:
         self.benchmark_cfg = benchmark_cfg
         self.allowed_reps = allowed_reps
 
+        # load prompt from file if needed
+        prompt_type = self.benchmark_cfg.get("prompt_type", "string")
+        if prompt_type == "string":
+            self.prompt = [{
+                "role": "user",
+                "content": self.benchmark_cfg['prompt']
+            }]
+        elif prompt_type == "file":
+            with open(self.benchmark_cfg['prompt'], 'r') as f:
+                prompt_msgs = json.load(f)
+            self.prompt = prompt_msgs
 
     def __call__(self, trial:optuna.Trial):
         """Run a single trial using class parameters."""
@@ -79,7 +92,7 @@ class InferenceObjective:
 
             print("Running benchmark...")
             result = self.benchmark(
-                prompt=self.benchmark_cfg["prompt"],
+                prompt=self.prompt,
                 tokens=self.benchmark_cfg["tokens"],
                 warmup_seconds=self.benchmark_cfg["warmup_seconds"],
                 measure_seconds=self.benchmark_cfg["measure_seconds"]
@@ -140,11 +153,11 @@ class InferenceObjective:
         except subprocess.TimeoutExpired:
             proc.kill()
     
-    def benchmark(self, prompt, tokens, warmup_seconds, measure_seconds):
+    def benchmark(self, prompt:list[dict], tokens, warmup_seconds, measure_seconds):
         start = time.time()
         r = requests.post(
-            "http://localhost:" + str(self.server_port) + "/completion",
-            json={"prompt": prompt, "n_predict": tokens, "ignore_eos": True}
+            "http://localhost:" + str(self.server_port) + "/v1/chat/completions",
+            json={"messages": prompt, "n_predict": tokens, "ignore_eos": True}
         )
         end = time.time()
 
