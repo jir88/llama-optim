@@ -118,7 +118,14 @@ class InferenceObjective:
         trial.set_user_attr("tokens_predicted", result["tokens_predicted"])
         trial.set_user_attr("draft_n", result["draft_n"])
         trial.set_user_attr("draft_n_accepted", result["draft_n_accepted"])
-        # currently only optimizing TPS
+        # return the performance parameter we're optimizing on
+        if self.benchmark_cfg["optimize"] == "prompt":
+            return result["prompt_per_second"]
+        elif self.benchmark_cfg["optimize"] == "generation":
+            return result["tokens_per_second"]
+        elif self.benchmark_cfg["optimize"] == "total":
+            return result["latency"]
+        
         return result["tokens_per_second"]
     
     def start_server(self, params:dict):
@@ -244,9 +251,16 @@ def main():
         allowed_reps=search_cfg.get("allowed_reps", 1)
     )
 
+    # unlike other benchmarks, we want to minimize the amount of time
+    # required for generation...
+    if benchmark_cfg["optimize"] == "total":
+        direction = "minimize"
+    else:
+        direction = "maximize"
+
     optim_study = optuna.create_study(
         sampler=optuna.samplers.TPESampler(n_startup_trials=5),
-        direction="maximize"
+        direction=direction
     )
     optim_study.optimize(
         func=objective,

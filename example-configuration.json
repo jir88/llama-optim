@@ -19,7 +19,8 @@
     "prompt": "Hello, how are you today?",
     "tokens": 128,
     "warmup_seconds": 2,
-    "measure_seconds": 5
+    "measure_seconds": 5,
+    "optimize": "generation"
   },
 
   "search": {
