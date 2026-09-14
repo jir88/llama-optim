@@ -131,6 +131,7 @@ class InferenceObjective:
 
         print(f"Result: {result}")
         trial.set_user_attr("prompt_per_second", result["prompt_per_second"])
+        trial.set_user_attr("tokens_per_second", result["tokens_per_second"])
         trial.set_user_attr("tokens_predicted", result["tokens_predicted"])
         trial.set_user_attr("draft_n", result["draft_n"])
         trial.set_user_attr("draft_n_accepted", result["draft_n_accepted"])
