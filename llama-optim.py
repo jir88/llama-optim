@@ -64,6 +64,20 @@ class InferenceObjective:
 
         # select new set of parameters to test
         for k in self.optimize_params:
+            # if param is a dict, it's a new style parameter
+            if type(self.optimize_params[k]) == dict:
+                params[k] = self.select_parameter(
+                    trial=trial,
+                    param_name=k,
+                    param_cfg=self.optimize_params[k]
+                )
+            elif type(self.optimize_params[k]) == list: # a regular list parameter
+                params[k] = trial.suggest_categorical(
+                    name=k,
+                    choices=self.optimize_params[k]
+                )
+            else: # probably a misplaced static parameter
+                print("Is " + k + " a static parameter in the opimizing parameter area?")
         # could either reroll or else throw an optuna.TrialPruned
         history = trial.study.get_trials(deepcopy=False)
         # drop last trial, which is the current one
@@ -134,6 +148,7 @@ class InferenceObjective:
         for key, value in params.items():
             flag = f"--{key.replace('_', '-')}"
             if isinstance(value, bool):
+                # boolean values indicate present/absent flag, false -> absent
                 if value:
                     cmd.append(flag)
             else:
@@ -193,6 +208,30 @@ class InferenceObjective:
             "draft_n_accepted": timing_data.get("draft_n_accepted", -1),
             "latency": elapsed
         }
+    
+    def select_parameter(self, trial:optuna.Trial, param_name:str, param_cfg:dict):
+        """Given a dict describing a parameter, select a valid value for it."""
+        param_type = param_cfg["type"]
+        if param_type == "flag":
+            param_state = trial.suggest_categorical(
+                name=param_name,
+                choices=[False, True]
+            )
+            return param_state
+        elif param_type == "integer":
+            return trial.suggest_int(
+                name=param_name,
+                low=param_cfg["low"],
+                high=param_cfg["high"],
+                step=param_cfg["step"]
+            )
+        elif param_type == "float":
+            return trial.suggest_float(
+                name=param_name,
+                low=param_cfg["low"],
+                high=param_cfg["high"],
+                step=param_cfg.get("step", default=None)
+            )
 
 def parse_args() -> argparse.Namespace:
     """

@@ -5,13 +5,21 @@
 
   "static_params": {
     "threads": 6,
-    "gpu_layers": "auto",
     "flash_attn": "on"
   },
 
   "optimize": {
     "batch_size": [512, 1024, 2048, 4096],
-    "fit_ctx": [2048, 4096]
+    "fit_ctx": [2048, 4096],
+    "gpu_layers": {
+        "type": "integer",
+        "low": 0,
+        "high": 10,
+        "step": 1
+    },
+    "backend_sampling": {
+        "type": "flag"
+    }
   },
 
   "benchmark": {
