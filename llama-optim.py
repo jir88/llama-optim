@@ -114,6 +114,8 @@ class InferenceObjective:
         except KeyboardInterrupt:
             self.stop_server(proc=proc)
             print("Killed server before terminating.")
+            # let the error bubble up and die cleanly
+            raise
         except ConnectionError as e:
             self.stop_server(proc=proc)
             print("Server connection failed!")
@@ -301,11 +303,16 @@ def main():
         sampler=optuna.samplers.TPESampler(n_startup_trials=5),
         direction=direction
     )
-    optim_study.optimize(
-        func=objective,
-        n_trials=search_cfg.get("n_trials", 10),
-        n_jobs=1
-    )
+    try:
+        optim_study.optimize(
+            func=objective,
+            n_trials=search_cfg.get("n_trials", 10),
+            n_jobs=1
+        )
+    except KeyboardInterrupt:
+        print("Job killed by keyboard interrupt, saving output!")
+        df = optim_study.trials_dataframe()
+        df.to_csv(csv_path)
 
     print("\n=== BEST CONFIGURATION ===")
     best = optim_study.best_trials
