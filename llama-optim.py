@@ -300,10 +300,23 @@ def main():
     else:
         direction = "maximize"
 
-    optim_study = optuna.create_study(
-        sampler=optuna.samplers.TPESampler(n_startup_trials=5),
-        direction=direction
-    )
+    sampler_type = search_cfg.get("strategy")
+    if sampler_type == "TPE":
+        optim_study = optuna.create_study(
+            sampler=optuna.samplers.TPESampler(n_startup_trials=5),
+            direction=direction
+        )
+    elif sampler_type == "brute":
+        optim_study = optuna.create_study(
+            sampler=optuna.samplers.BruteForceSampler(),
+            direction=direction
+        )
+    else: # default to TPE with a warning
+        print("Warning: no search stragety provided, defaulting to TPE!")
+        optim_study = optuna.create_study(
+            sampler=optuna.samplers.TPESampler(n_startup_trials=5),
+            direction=direction
+        )
     try:
         optim_study.optimize(
             func=objective,
