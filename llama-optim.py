@@ -311,17 +311,15 @@ def main():
             n_jobs=1
         )
     except KeyboardInterrupt:
-        print("Job killed by keyboard interrupt, saving output!")
+        print("Job stopped by user!")
+    finally: # even if the job failed in some bizarre way, we want to recover any results if possible
+        print("\n=== BEST CONFIGURATION ===")
+        best = optim_study.best_trials
+        for t in best:
+            print(t)
+        
         df = optim_study.trials_dataframe()
         df.to_csv(csv_path)
-
-    print("\n=== BEST CONFIGURATION ===")
-    best = optim_study.best_trials
-    for t in best:
-        print(t)
-    
-    df = optim_study.trials_dataframe()
-    df.to_csv(csv_path)
 
 
 if __name__ == "__main__":
