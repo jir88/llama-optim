@@ -112,22 +112,21 @@ class InferenceObjective:
                 measure_seconds=self.benchmark_cfg["measure_seconds"]
             )
         except KeyboardInterrupt:
-            self.stop_server(proc=proc)
             print("Killed server before terminating.")
             # let the error bubble up and die cleanly
             raise
         except ConnectionError as e:
-            self.stop_server(proc=proc)
             print("Server connection failed!")
             print(str(e))
-            print("Killed server before pruning condition.")
+            print("Will prune this condition.")
             raise optuna.TrialPruned()
-
-        self.stop_server(proc)
+        finally:
+            print("Stopping server...")
+            self.stop_server(proc)
 
         if result is None:
             print("Benchmark failed.")
-            return None
+            raise optuna.TrialPruned()
 
         print(f"Result: {result}")
         trial.set_user_attr("prompt_per_second", result["prompt_per_second"])
