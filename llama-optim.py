@@ -120,6 +120,12 @@ class InferenceObjective:
             print(str(e))
             print("Will prune this condition.")
             raise optuna.TrialPruned()
+        except requests.exceptions.ConnectionError as e:
+            # this is different from a vanilla ConnectionError for some reason...
+            print("Server connection failed!")
+            print(str(e))
+            print("Will prune this condition.")
+            raise optuna.TrialPruned()
         finally:
             print("Stopping server...")
             self.stop_server(proc)
