@@ -353,7 +353,7 @@ def main():
     csv_path = args.output
     if not args.overwrite and csv_path.exists():
         # put timestamp on input file name
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # noqa: DTZ005
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         csv_path = csv_path.parent.joinpath(csv_path.stem + "_" + timestamp + ".csv")
 
     objective = InferenceObjective(
