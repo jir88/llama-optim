@@ -251,7 +251,9 @@ class InferenceObjective:
         timing_data = data.get("timings")
 
         print(str(data))
-        tok_count = data.get("tokens_predicted", tokens)
+        tok_count = data.get("tokens_predicted")
+        if tok_count is None:
+            tok_count = timing_data.get("predicted_n", -1)
         elapsed = end - start
 
         return {
