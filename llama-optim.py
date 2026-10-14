@@ -61,23 +61,67 @@ class InferenceObjective:
         """Run a single trial using class parameters."""
 
         params = self.static_params.copy()
-
+        
         # select new set of parameters to test
+        rel_params = {}
         for k in self.optimize_params:
+            parameter = self.optimize_params[k]
             # if param is a dict, it's a new style parameter
-            if type(self.optimize_params[k]) == dict:
-                params[k] = self.select_parameter(
-                    trial=trial,
-                    param_name=k,
-                    param_cfg=self.optimize_params[k]
-                )
-            elif type(self.optimize_params[k]) == list: # a regular list parameter
+            if type(parameter) == dict:
+                if parameter["type"] == "multiple":
+                    # have to copy here or else you end up overwriting the
+                    # parameter definitions for subsequent runs
+                    rel_params[k] = parameter.copy()
+                else:
+                    params[k] = self.select_parameter(
+                        trial=trial,
+                        param_name=k,
+                        param_cfg=parameter
+                    )
+            elif type(parameter) == list: # a regular list parameter
                 params[k] = trial.suggest_categorical(
                     name=k,
-                    choices=self.optimize_params[k]
+                    choices=parameter
                 )
             else: # probably a misplaced static parameter
                 print("Is " + k + " a static parameter in the opimizing parameter area?")
+        
+        # now deal with the relative parameters
+        # relative parameters where the reference parameter has already been selected
+        defined_ref_params = {}
+        for rel_p_name,rel_p_value in rel_params.items():
+            # look in defined parameters
+            for other_p_name,other_p_value in params.items():
+                if other_p_name == rel_p_value['reference']:
+                    rel_p_value['reference'] = other_p_value
+                    defined_ref_params[rel_p_name] = rel_p_value
+            # otherwise, must be referencing another relative parameter
+            for other_p_name,other_p_value in rel_params.items():
+                if other_p_name == rel_p_value['reference']:
+                    rel_p_value['reference'] = other_p_value
+                    # add this relative param to the list of dependencies
+                    if other_p_value.get("dependants") is None:
+                        other_p_value["dependants"] = { rel_p_name : rel_p_value }
+                    else:
+                        other_p_value["dependants"][rel_p_name] = rel_p_value
+        
+        while len(defined_ref_params) > 0:
+            rel_p_name,rel_p_value = defined_ref_params.popitem()
+            # select relative parameter value
+            sel_rel_value = self.select_relative_parameter(
+                trial=trial,
+                param_name=rel_p_name,
+                param_cfg=rel_p_value
+            )
+            # add value to params dict
+            params[rel_p_name] = sel_rel_value
+            # update dependants
+            if rel_p_value.get("dependants") is not None:
+                for other_p_name,other_p_value in rel_p_value["dependants"]:
+                    other_p_value["reference"] = sel_rel_value
+                    # now dependant is a defined-reference parameter that needs to be selected
+                    defined_ref_params[other_p_name] = other_p_value
+
         # could either reroll or else throw an optuna.TrialPruned
         history = trial.study.get_trials(deepcopy=False)
         # drop last trial, which is the current one
@@ -244,6 +288,27 @@ class InferenceObjective:
                 high=param_cfg["high"],
                 step=param_cfg.get("step", default=None)
             )
+    
+    def select_relative_parameter(self, trial:optuna.Trial, param_name:str, param_cfg:dict):
+        """Given a dict describing a relative parameter, select a valid value for it."""
+        # select the relative value
+        param_copy = param_cfg.copy()
+        param_copy["type"] = param_cfg["multiple_type"]
+        param_type = param_cfg["type"]
+        rel_value = self.select_parameter(
+            trial=trial,
+            param_name=param_name + "_" + param_type,
+            param_cfg=param_copy
+        )
+        
+        if param_type == "multiple":
+            return param_cfg["reference"]*rel_value
+        elif param_type == "fraction":
+            return param_cfg["reference"]/rel_value
+        elif param_type == "offset":
+            return param_cfg["reference"] + rel_value
+        else:
+            raise ValueError(f"Unknown relative type: {param_type}")
 
 def parse_args() -> argparse.Namespace:
     """

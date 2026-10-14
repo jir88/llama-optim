@@ -9,7 +9,7 @@
   },
 
   "optimize": {
-    "batch_size": [512, 1024, 2048, 4096],
+    "ubatch_size": [512, 1024, 2048, 4096],
     "fit_ctx": [2048, 4096],
     "gpu_layers": {
         "type": "integer",
@@ -19,6 +19,14 @@
     },
     "backend_sampling": {
         "type": "flag"
+    },
+    "batch_size": {
+        "type": "multiple",
+        "multiple_type": "integer",
+        "reference": "ubatch_size",
+        "low": 1,
+        "high": 8,
+        "step": 1
     }
   },
 
@@ -32,7 +40,7 @@
   },
 
   "search": {
-    "strategy": "grid",
+    "strategy": "brute",
     "random_trials": 10,
     "bayes_trials": 30,
     "bayes_beta": 0.3,  
