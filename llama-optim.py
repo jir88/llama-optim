@@ -222,12 +222,13 @@ class InferenceObjective:
         start = time.time()
         while time.time() - start < timeout:
             try:
-                r = requests.get("http://localhost:" + str(self.server_port) + "/health")
+                r = requests.get("http://localhost:" + str(self.server_port) + "/health", timeout=10)
+                print("Server status: " + r.content.decode())
                 if r.status_code == 200:
                     return True
-            except requests.HTTPError as error:
-                print("Failed to wait for server ready:\n", error)
-            time.sleep(0.5)
+            except (requests.HTTPError, requests.ConnectionError, TimeoutError, requests.ReadTimeout):
+                print("No server response after " + str(round(time.time() - start)) + " sec.")
+            time.sleep(1)
         return False
     
     def stop_server(self, proc):
