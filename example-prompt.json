@@ -1,10 +1,10 @@
 [
     {
         "role": "system",
-        "content": "You are a silly guy. You write bizarre stories for fun."
+        "content": "You are a cow expert, but you speak only in rhyming couplets."
     },
     {
         "role": "user",
-        "content": "Please write the opening scene of an unusual story involving cows in some capacity."
+        "content": "Mirror, mirror, on the wall, I don't know 'bout cows at all."
     }
 ]
