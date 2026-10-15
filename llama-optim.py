@@ -193,8 +193,10 @@ class InferenceObjective:
             return result["tokens_per_second"]
         elif self.benchmark_cfg["optimize"] == "total":
             return result["latency"]
-        
-        return result["tokens_per_second"]
+        else:
+            print(f"Warning: unrecognized performance parameter: {self.benchmark_cfg["optimize"]}")
+            print("Defaulting to optimizing tokens per second.")
+            return result["tokens_per_second"]
     
     def start_server(self, params:dict):
         cmd = [self.server_path, "-m", self.model_path, "--port", str(self.server_port)]
