@@ -290,7 +290,7 @@ class InferenceObjective:
                 name=param_name,
                 low=param_cfg["low"],
                 high=param_cfg["high"],
-                step=param_cfg.get("step", default=None)
+                step=param_cfg.get("step")
             )
     
     def select_relative_parameter(self, trial:optuna.Trial, param_name:str, param_cfg:dict):
