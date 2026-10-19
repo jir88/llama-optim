@@ -2,6 +2,8 @@ import argparse
 import datetime
 import json
 import subprocess
+import sys
+import threading
 import time
 from pathlib import Path
 
@@ -212,13 +214,23 @@ class InferenceObjective:
 
         print("Launching:", " ".join(cmd))
 
-        return subprocess.Popen(
+        server_process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1
+            stderr=subprocess.PIPE
         )
+
+        # print output from the server process as it is produced
+        def server_log(in_stream, out_stream):
+            for line in iter(in_stream.readline, b''):
+                print(line.decode('utf-8'), end='', file=out_stream)
+
+        thread_stdout = threading.Thread(target=server_log, args=(server_process.stdout, sys.stdout))
+        thread_stdout.start()
+        thread_stderr = threading.Thread(target=server_log, args=(server_process.stderr, sys.stderr))
+        thread_stderr.start()
+
+        return server_process
     
     def wait_for_server_ready(self, timeout=20):
         start = time.time()
