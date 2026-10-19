@@ -1,0 +1,71 @@
+{
+  "model_path": "path/to/model.gguf",
+  "server_path": "path/to/ik_llama-server.exe",
+  "server_port": 8067,
+
+  "static_params": {
+    "threads": 6,
+    "flash_attn": "on",
+    "np": 1,
+    "jinja": true,
+    "swa_compress": true
+  },
+
+  "optimize": {
+    "ubatch_size": [512, 1024, 2048, 4096],
+    "ctx_size": [2048, 4096],
+    "fused_moe": {
+        "type": "flag"
+    },
+    "no-fused-up-gate": {
+        "type": "flag"
+    },
+    "no_graph_reuse": {
+        "type": "flag"
+    },
+    "merge_qkv": {
+        "type": "flag"
+    },
+    "cache_ram": {
+        "type": "integer",
+        "low": 0,
+        "high": 4096,
+        "step": 512
+    },
+    "gpu_layers": {
+        "type": "integer",
+        "low": 0,
+        "high": 10,
+        "step": 1
+    },
+    "backend_sampling": {
+        "type": "flag"
+    },
+    "batch_size": {
+        "type": "multiple",
+        "multiple_type": "integer",
+        "reference": "ubatch_size",
+        "low": 1,
+        "high": 4,
+        "step": 1
+    }
+  },
+
+  "benchmark": {
+    "prompt_type": "string",
+    "prompt": "Hello, how are you today?",
+    "tokens": 128,
+    "warmup_seconds": 120,
+    "measure_seconds": 120,
+    "optimize": "generation"
+  },
+
+  "search": {
+    "strategy": "TPE",
+    "random_trials": 10,
+    "bayes_trials": 50,
+    "bayes_beta": 0.3,  
+    "n_trials": 100,
+    "allowed_reps": 2
+  }
+}
