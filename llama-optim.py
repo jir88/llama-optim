@@ -215,7 +215,9 @@ class InferenceObjective:
         return subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1
         )
     
     def wait_for_server_ready(self, timeout=20):
@@ -232,11 +234,17 @@ class InferenceObjective:
         return False
     
     def stop_server(self, proc):
-        proc.terminate()
         try:
-            proc.wait(timeout=5)
+            std_out,std_err = proc.communicate(timeout=2)
+            proc.terminate()
+            proc.wait(timeout=15)
+            print(std_err)
         except subprocess.TimeoutExpired:
+            print("Had to KILL the llama.cpp process!")
             proc.kill()
+            std_out,std_err = proc.communicate()
+            print(std_out)
+            print(std_err)
     
     def benchmark(self, prompt:list[dict], tokens, warmup_seconds, measure_seconds):
         start = time.time()
