@@ -5,7 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "certifi>=2026.10.19",
+    "mako>=1.4.2",
     "optuna>=4.9.0",
     "pandas>=3.0.5",
     "requests>=2.34.2",
+    "urllib3>=2.8.0",
 ]
