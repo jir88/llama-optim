@@ -430,8 +430,16 @@ def main():
         for t in best:
             print(t)
         
-        df = optim_study.trials_dataframe()
-        df.to_csv(csv_path)
+        print("\n=== VARIABLE IMPORTANCE ===")
+        var_imp = optuna.importance.get_param_importances(
+            study=optim_study,
+            evaluator=optuna.importance.PedAnovaImportanceEvaluator(
+                target_quantile=0.5,
+                region_quantile=1.0,
+                evaluate_on_local=True
+            )
+        )
+        print(json.dumps(var_imp))
 
 
 if __name__ == "__main__":
