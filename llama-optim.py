@@ -425,6 +425,10 @@ def main():
     except KeyboardInterrupt:
         print("Job stopped by user!")
     finally: # even if the job failed in some bizarre way, we want to recover any results if possible
+        # prioritize writing file before anything else can go wrong
+        df = optim_study.trials_dataframe()
+        df.to_csv(csv_path)
+
         print("\n=== BEST CONFIGURATION ===")
         best = optim_study.best_trials
         for t in best:
