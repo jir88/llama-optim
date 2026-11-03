@@ -402,7 +402,7 @@ def main():
     sampler_type = search_cfg.get("strategy")
     if sampler_type == "TPE":
         optim_study = optuna.create_study(
-            sampler=optuna.samplers.TPESampler(n_startup_trials=5),
+            sampler=optuna.samplers.TPESampler(n_startup_trials=search_cfg.get("random_trials", 5)),
             direction=direction
         )
     elif sampler_type == "brute":
@@ -413,7 +413,7 @@ def main():
     else: # default to TPE with a warning
         print("Warning: no search stragety provided, defaulting to TPE!")
         optim_study = optuna.create_study(
-            sampler=optuna.samplers.TPESampler(n_startup_trials=5),
+            sampler=optuna.samplers.TPESampler(n_startup_trials=search_cfg.get("random_trials", 5)),
             direction=direction
         )
     try:
