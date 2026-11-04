@@ -70,7 +70,7 @@ class InferenceObjective:
             parameter = self.optimize_params[k]
             # if param is a dict, it's a new style parameter
             if type(parameter) == dict:
-                if parameter["type"] == "multiple":
+                if parameter["type"] in ["multiple", "fraction", "offset"]:
                     # have to copy here or else you end up overwriting the
                     # parameter definitions for subsequent runs
                     rel_params[k] = parameter.copy()
